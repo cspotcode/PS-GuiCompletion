@@ -107,5 +107,5 @@ if($publish) {
     $key = read-file publishkey.txt
     $version = get-version
     publish-module -Path $out -NuGetApiKey $key
-    git tag "v$version"
+    # git tag "v$version"
 }

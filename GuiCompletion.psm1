@@ -39,3 +39,7 @@ Function Invoke-GuiCompletion {
         }
     }
 }
+
+# The list of export functions and variables is further restricted in .psd1
+Export-ModuleMember -Function *
+Export-ModuleMember -Variable GuiCompletionConfig
