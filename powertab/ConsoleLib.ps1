@@ -46,11 +46,11 @@ Function Out-ConsoleList {
             return
         }
 
-        ## If the shift key is pressed, then output the first result without displaying console list
-        if (Get-KeyState 0x10) {
-            $Content[0].Value
-            return
-        }
+        # ## If the shift key is pressed, then output the first result without displaying console list
+        # if (Get-KeyState 0x10) {
+        #     $Content[0].Value
+        #     return
+        # }
 
         ## Create console list
         $Filter = ''
@@ -102,7 +102,8 @@ Function Out-ConsoleList {
                 }
                 $OldFilter = $Filter
             }
-            $ShiftPressed = Get-KeyState 0x10  ## Check for Shift Key
+            # $ShiftPressed = Get-KeyState 0x10  ## Check for Shift Key
+            $ShiftPressed = $false
             $HasChild = $false
             switch ($Key.VirtualKeyCode) {
                 9 { ## Tab

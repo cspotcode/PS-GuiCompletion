@@ -4,6 +4,8 @@ Function Get-KeyState {
         [UInt16]$KeyCode
     )
 
+    # This only works on Windows, so for now, we are never using it.
+
     $Signature = '[DllImport("user32.dll")]public static extern short GetKeyState(int nVirtKey);'
     $Type = Add-Type -MemberDefinition $Signature -Name User32PowerTab -Namespace GetKeyState -PassThru
     return [Bool]($Type::GetKeyState($KeyCode) -band 0x80)
