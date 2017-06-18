@@ -7,7 +7,7 @@ Bugs?  Please open an issue on Github: https://github.com/cspotcode/PS-GuiComple
 <!--END DESCRIPTION-->
 
 <!-- TODO add screenshot -->
-![Animated example](https://github.com/cspotcode/PS-GuiCompletion/docs/example.gif)
+![Animated example](docs/example.gif)
 
 ## Installation 
 
