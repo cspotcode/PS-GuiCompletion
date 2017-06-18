@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
-. .\powertab\default-config.ps1
-. .\powertab\ConsoleLib.ps1
-. .\powertab\TabExpansionUtil.ps1
+. $PSScriptRoot\powertab\default-config.ps1
+. $PSScriptRoot\powertab\ConsoleLib.ps1
+. $PSScriptRoot\powertab\TabExpansionUtil.ps1
 
 Function Install-GuiCompletion($Key = 'Ctrl+Spacebar') {
     Set-PSReadLineKeyHandler -Key $Key -ScriptBlock {
