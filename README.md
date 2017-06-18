@@ -32,3 +32,7 @@ Register it with the default Ctrl+Spacebar key shortcut:
     Set-PSReadlineKeyHandler -Key Alt+Spacebar -ScriptBlock { Invoke-GuiCompletion }
 
 You'll want to add these configuration commands to your PowerShell profile.  Otherwise your configuration will not be applied to new PowerShell sessions.
+
+## TODOs
+
+Mac and Linux support.  GetKeyState and some of the rendering code is apparently Windows-only.
