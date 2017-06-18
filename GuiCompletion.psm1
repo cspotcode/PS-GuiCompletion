@@ -1,5 +1,4 @@
-# Add-Type -AssemblyName System.Drawing
-
+$ErrorActionPreference = 'Stop'
 . .\powertab\default-config.ps1
 . .\powertab\ConsoleLib.ps1
 . .\powertab\TabExpansionUtil.ps1
