@@ -13,7 +13,9 @@ Bugs?  Please open an issue on Github: https://github.com/cspotcode/PS-GuiComple
 
 Install from the PowerShell Gallery. ([GuiCompletion's Gallery page](https://www.powershellgallery.com/packages/GuiCompletion))
 
-    Install-Module -Name GuiCompletion
+    Install-Module -Name GuiCompletion -Scope CurrentUser
+
+*You can omit `-Scope` but I use it to avoid requiring Administrator permissions.*
 
 ## Usage
 
