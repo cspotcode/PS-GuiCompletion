@@ -23,6 +23,9 @@ Function Out-ConsoleList {
         ,
         [Switch]
         $ForceList
+        ,
+        [ref]
+        $Recurse # Will be set to true if completion menu should be re-opened after applying the completion
     )
 
     begin {
@@ -224,20 +227,9 @@ Function Out-ConsoleList {
                 190 { ## Period
                     if ($PowerTabConfig.DotComplete -and -not $PowerTabFileSystemMode) {
                         if ($PowerTabConfig.AutoExpandOnDot) {
-                            ## Expand with currently selected item
-                            $Host.UI.Write($Host.UI.RawUI.ForegroundColor, $Host.UI.RawUI.BackgroundColor, ($ListHandle.Items[$ListHandle.SelectedItem].Value.SubString($LastWord.Length + $Filter.Length) + '.'))
-                            $ListHandle.Clear()
-                            $LinePart = $Line.SubString(0, $Line.Length - $LastWord.Length)
-
-                            ## Remove message handle ([Tab]) because we will be reinvoking tab expansion
-                            Remove-TabActivityIndicator
-
-                            ## Recursive tab expansion
-                            . TabExpansion ($LinePart + $ListHandle.Items[$ListHandle.SelectedItem].Value + '.') ($ListHandle.Items[$ListHandle.SelectedItem].Value + '.') -ForceList
-                            $HasChild = $true
-                        } else {
-                            $ListHandle.Items[$ListHandle.SelectedItem].Value
+                            $Recurse.Value = $true
                         }
+                        $ListHandle.Items[$ListHandle.SelectedItem].Value + '.'
                         $Continue = $false
                         break
                     }
@@ -245,22 +237,9 @@ Function Out-ConsoleList {
                 {'\','/' -contains $Key.Character} { ## Path Separators
                     if ($PowerTabConfig.BackSlashComplete) {
                         if ($PowerTabConfig.AutoExpandOnBackSlash) {
-                            ## Expand with currently selected item
-                            $Host.UI.Write($Host.UI.RawUI.ForegroundColor, $Host.UI.RawUI.BackgroundColor, ($ListHandle.Items[$ListHandle.SelectedItem].Value.SubString($LastWord.Length + $Filter.Length) + $Key.Character))
-                            $ListHandle.Clear()
-                            if ($Line.Length -ge $LastWord.Length) {
-                                $LinePart = $Line.SubString(0, $Line.Length - $LastWord.Length)
-                            }
-
-                            ## Remove message handle ([Tab]) because we will be reinvoking tab expansion
-                            Remove-TabActivityIndicator
-
-                            ## Recursive tab expansion
-                            . Invoke-TabExpansion ($LinePart + $ListHandle.Items[$ListHandle.SelectedItem].Value + $Key.Character) ($ListHandle.Items[$ListHandle.SelectedItem].Value + $Key.Character) -ForceList
-                            $HasChild = $true
-                        } else {
-                            $ListHandle.Items[$ListHandle.SelectedItem].Value
+                            $Recurse.Value = $true
                         }
+                        $ListHandle.Items[$ListHandle.SelectedItem].Value + $Key.Character
                         $Continue = $false
                         break
                     }
