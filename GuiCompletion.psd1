@@ -12,7 +12,7 @@
 RootModule = 'GuiCompletion.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.7.3'
+ModuleVersion = '0.7.4'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -116,7 +116,7 @@ PrivateData = @{
 } # End of PrivateData hashtable
 
 # HelpInfo URI of this module
-# HelpInfoURI = ''
+HelpInfoURI = 'https://github.com/cspotcode/PS-GuiCompletion'
 
 # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
 # DefaultCommandPrefix = ''
