@@ -1,15 +1,15 @@
 $PowerTabConfig = @{
     Colors = @{
-        # This is the "Original" theme
-        TextColor = 'Yellow'
-        BackColor = 'DarkGray'
-        SelectedTextColor = 'Red'
-        SelectedBackColor = 'DarkRed'
+        # This the default cmd menus theme
+        TextColor = 'DarkMagenta'
+        BackColor = 'White'
+        SelectedTextColor = 'White'
+        SelectedBackColor = 'DarkMagenta'
 
-        BorderTextColor = 'Yellow'
-        BorderBackColor = 'DarkBlue'
-        BorderColor = 'Blue'
-        FilterColor = 'Gray'
+        BorderTextColor = 'DarkMagenta'
+        BorderBackColor = 'White'
+        BorderColor = 'DarkMagenta'
+        FilterColor = 'DarkGray'
     }
     MinimumListItems = 2
     FastScrollItemCount = 10
