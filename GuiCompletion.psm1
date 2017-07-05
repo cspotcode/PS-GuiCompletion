@@ -19,7 +19,7 @@ Function Invoke-GuiCompletion {
             return
         }
         # get list of completion items via the standard API
-        $completion = [System.Management.Automation.CommandCompletion]::CompleteInput($buffer, $cursorPosition, @{})
+        $completion = TabExpansion2 $buffer $cursorPosition
         if($completion.CompletionMatches.Count -eq 0) {
             return
         }
