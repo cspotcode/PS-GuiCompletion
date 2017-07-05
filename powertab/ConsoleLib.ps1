@@ -1,6 +1,6 @@
 # ConsoleLib.ps1
 #
-# 
+#
 
 
 Function Out-ConsoleList {
@@ -170,7 +170,7 @@ Function Out-ConsoleList {
                     ## Add a new character (the one right after the current filter string) from currently selected item
                     $Char = $ListHandle.Items[$ListHandle.SelectedItem].Text[($LastWord.Length + $Filter.Length + 1)]
                     $Filter += $Char
-                    
+
                     $Old = $Items.Length
                     $Items = $Content -match ([Regex]::Escape("$LastWord$Filter") + '.*')
                     $New = $Items.Length
@@ -395,7 +395,7 @@ Function Out-ConsoleList {
             $LineBottom = $Box.BottomLeftDoubleSingle `
                 + $Box.HorizontalDouble * ($Size.width - 2) `
                 + $Box.BottomRightDoubleSingle
-        } else {  
+        } else {
             ## Single line box
             $LineTop = $Box.TopLeft `
                 + $Box.Horizontal * ($Size.width - 2) `
@@ -449,15 +449,19 @@ Function Out-ConsoleList {
         $BufferBottom = $BufferTop = $Position
         $BufferBottom.X += ($Buffer.GetUpperBound(1))
         $BufferBottom.Y += ($Buffer.GetUpperBound(0))
-        $Rectangle = New-Object System.Management.Automation.Host.Rectangle $BufferTop, $BufferBottom
-        $OldBuffer = $Host.UI.RawUI.GetBufferContents($Rectangle)
+
+        $OldTop = New-Object System.Management.Automation.Host.Coordinates 0, $BufferTop.Y
+        $OldBottom = New-Object System.Management.Automation.Host.Coordinates ($Host.UI.RawUI.BufferSize.Width - 1), $BufferBottom.Y
+        $OldBuffer = $Host.UI.RawUI.GetBufferContents((New-Object System.Management.Automation.Host.Rectangle $OldTop, $OldBottom))
+
         $Host.UI.RawUI.SetBufferContents($BufferTop, $Buffer)
         $Handle = New-Object System.Management.Automation.PSObject -Property @{
             'Content' = $Buffer
             'OldContent' = $OldBuffer
             'Location' = $BufferTop
+            'OldLocation' = $OldTop
         }
-        Add-Member -InputObject $Handle -MemberType ScriptMethod -Name Clear -Value {$Host.UI.RawUI.SetBufferContents($This.Location, $This.OldContent)}
+        Add-Member -InputObject $Handle -MemberType ScriptMethod -Name Clear -Value {$Host.UI.RawUI.SetBufferContents($This.OldLocation, $This.OldContent)}
         Add-Member -InputObject $Handle -MemberType ScriptMethod -Name Show -Value {$Host.UI.RawUI.SetBufferContents($This.Location, $This.Content)}
         $Handle
     }
@@ -499,12 +503,12 @@ Function Out-ConsoleList {
 
         switch ($Placement) {
             'Above' {
-                $MaxListHeight = $CursorOffset 
+                $MaxListHeight = $CursorOffset
                 if ($MaxListHeight -lt $ListHeight) {$ListHeight = $MaxListHeight}
                 $Y = $CursorOffset - $ListHeight
             }
             'Below' {
-                $MaxListHeight = ($CursorOffsetBottom - 1)  
+                $MaxListHeight = ($CursorOffsetBottom - 1)
                 if ($MaxListHeight -lt $ListHeight) {$ListHeight = $MaxListHeight}
                 $Y = $CursorOffSet + 1
             }
@@ -514,10 +518,10 @@ Function Out-ConsoleList {
         # Horizontal
         $ListWidth = $Size.Width + 4
         if ($ListWidth -gt $WindowSize.Width) {$ListWidth = $Windowsize.Width}
-        $Max = $ListWidth 
+        $Max = $ListWidth
         if (($Cursor.X + $Max) -lt ($WindowSize.Width - 2)) {
             $X = $Cursor.X
-        } else {        
+        } else {
             if (($Cursor.X - $Max) -gt 0) {
                 $X = $Cursor.X - $Max
             } else {
@@ -570,7 +574,7 @@ Function Out-ConsoleList {
         $Position = New-Position $ListConfig.TopX $ListConfig.TopY
         $BoxHandle = New-Buffer $Position $Box
 
-        # Place content 
+        # Place content
         $Position.X += 1
         $Position.Y += 1
         $ContentBuffer = ConvertTo-BufferCellArray ($Content[0..($ListConfig.ListHeight - 3)] | Select-Object -ExpandProperty DisplayText) $ContentForegroundColor $ContentBackgroundColor
@@ -684,7 +688,7 @@ Function Out-ConsoleList {
                 if (($ListHandle.Items.Count - $SelectedItem - 1) -lt $Count) {$Count = $ListHandle.Items.Count - $SelectedItem - 1}
             } else {
                 $Move = $false
-                if (($ListHandle.MaxItems - $Line) -lt $Count) {$Count = $ListHandle.MaxItems - $Line}       
+                if (($ListHandle.MaxItems - $Line) -lt $Count) {$Count = $ListHandle.MaxItems - $Line}
             }
         } else {
             if ($SelectedItem -eq 0) {return}
@@ -731,4 +735,3 @@ Function Out-ConsoleList {
             $PowerTabConfig.Colors.BorderTextColor $PowerTabConfig.Colors.BorderBackColor
         $StatusHandle = New-Buffer $StatusHandle.Location $StatusBuffer
     }
-
