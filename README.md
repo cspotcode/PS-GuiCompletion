@@ -39,6 +39,10 @@ Mac and Linux support.  GetKeyState and some of the rendering code is apparently
 
 ## Changelog
 
+### v0.8.1
+
+- Fixes broken publication of v0.8.0
+
 ### v0.8.0
 
 - Switches to Windows' default menu color scheme ([#5](https://github.com/cspotcode/PS-GuiCompletion/issues/5), [@nightroman](https://github.com/nightroman))
