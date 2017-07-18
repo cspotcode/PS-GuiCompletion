@@ -36,3 +36,12 @@ You'll want to add these configuration commands to your PowerShell profile.  Oth
 ## TODOs
 
 Mac and Linux support.  GetKeyState and some of the rendering code is apparently Windows-only.
+
+## Changelog
+
+### v0.8.0
+
+- Switches to Windows' default menu color scheme ([#5](https://github.com/cspotcode/PS-GuiCompletion/issues/5), [@nightroman](https://github.com/nightroman))
+  - If you want to use the old theme or customize colors, modify the `$GuiCompletionConfig.Colors` global variable.
+- Fixes rendering glitch where some vertical lines could be left over after the menu closes ([#6](https://github.com/cspotcode/PS-GuiCompletion/issues/6), [@nightroman](https://github.com/nightroman))
+- Switches to `TabExpansion2` for computing completions, which allows other modules to plugin custom completions ([#7](https://github.com/cspotcode/PS-GuiCompletion/issues/7), [@nightroman](https://github.com/nightroman))
