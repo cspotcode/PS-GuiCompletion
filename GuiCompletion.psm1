@@ -1,7 +1,8 @@
 $ErrorActionPreference = 'Stop'
+$UI = $Host.UI.RawUI
+
 . $PSScriptRoot\powertab\default-config.ps1
 . $PSScriptRoot\powertab\ConsoleLib.ps1
-. $PSScriptRoot\powertab\TabExpansionUtil.ps1
 
 Function Install-GuiCompletion($Key = 'Ctrl+Spacebar') {
     Set-PSReadLineKeyHandler -Key $Key -ScriptBlock {
@@ -25,11 +26,8 @@ Function Invoke-GuiCompletion {
         }
         $lastWord = $buffer.Substring($completion.ReplacementIndex, $completion.ReplacementLength)
         # show the menu
-        $menuItems = $completion.CompletionMatches | ForEach-Object {
-            New-TabItem -Text $_.CompletionText -Value $_.CompletionText
-        }
         $Recurse = $false
-        $replacement = $menuItems | Out-ConsoleList -LastWord $lastWord -Recurse ([ref]$Recurse)
+        $replacement = Get-ConsoleList -Content $completion.CompletionMatches -LastWord $lastWord -Recurse ([ref]$Recurse)
         # Based on return value, apply the completion to the buffer state
         if($replacement -cne $lastWord) {
             [Microsoft.PowerShell.PSConsoleReadLine]::Replace($completion.ReplacementIndex, $completion.ReplacementLength, $replacement)

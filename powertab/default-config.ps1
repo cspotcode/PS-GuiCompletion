@@ -1,6 +1,6 @@
 $PowerTabConfig = @{
     Colors = @{
-        # This the default cmd menus theme
+        # This is the default cmd menus theme
         TextColor = 'DarkMagenta'
         BackColor = 'White'
         SelectedTextColor = 'White'
@@ -12,6 +12,7 @@ $PowerTabConfig = @{
         FilterColor = 'DarkGray'
     }
     MinimumListItems = 2
+    MinimumTextWidth = 25
     FastScrollItemCount = 10
     CloseListOnEmptyFilter = $true
     DotComplete = $true
