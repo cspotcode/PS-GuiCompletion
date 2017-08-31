@@ -9,12 +9,11 @@ $PowerTabConfig = @{
         BorderTextColor = 'DarkMagenta'
         BorderBackColor = 'White'
         BorderColor = 'DarkMagenta'
-        FilterColor = 'DarkGray'
+        FilterColor = 'DarkMagenta'
     }
     MinimumListItems = 2
     MinimumTextWidth = 25
     FastScrollItemCount = 10
-    CloseListOnEmptyFilter = $true
     DotComplete = $true
     AutoExpandOnDot = $true
     BackSlashComplete = $true
