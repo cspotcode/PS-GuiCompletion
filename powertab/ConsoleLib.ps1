@@ -486,6 +486,7 @@ Function Parse-List {
         }
     }
     $MaxItems = $MaxListHeight - 2
+    $PageSize = $ListHeight - 2
 
     # Horizontal
     $ListWidth = $Size.Width + 4
@@ -509,6 +510,7 @@ Function Parse-List {
         ListHeight = $ListHeight
         ListWidth = $ListWidth
         MaxItems = $MaxItems
+        PageSize = $PageSize
     }
 }
 
@@ -558,6 +560,7 @@ Function New-ConsoleList {
         Items = $Content
         FirstItem = 0
         LastItem = $Listconfig.ListHeight - 3
+        PageSize = $Listconfig.PageSize
         MaxItems = $Listconfig.MaxItems
     }
     Add-Member -InputObject $Handle -MemberType ScriptMethod -Name Clear -Value {$This.Box.Clear()}
@@ -646,35 +649,37 @@ Function Move-Selection {
 
     $SelectedItem = $ListHandle.SelectedItem
     $Line = $ListHandle.SelectedLine
-    if ($Count -eq ([Math]::Abs([Int]$Count))) { ## Down in list
-        if ($SelectedItem -eq ($ListHandle.Items.Count - 1)) {return}
+    if ($Count -ge 0) { ## Down in list
         $One = 1
         if ($SelectedItem -eq $ListHandle.LastItem) {
             $Move = $true
-            if (($ListHandle.Items.Count - $SelectedItem - 1) -lt $Count) {$Count = $ListHandle.Items.Count - $SelectedItem - 1}
+            $Count = [Math]::min($Count, ($ListHandle.Items.Count - $SelectedItem - 1))
         } else {
             $Move = $false
-            if (($ListHandle.MaxItems - $Line) -lt $Count) {$Count = $ListHandle.MaxItems - $Line}
+            $Count = [Math]::min($Count, ($ListHandle.PageSize - $Line))
         }
     } else {
-        if ($SelectedItem -eq 0) {return}
         $One = -1
         if ($SelectedItem -eq $ListHandle.FirstItem) {
             $Move = $true
-            if ($SelectedItem -lt ([Math]::Abs([Int]$Count))) {$Count = (-($SelectedItem))}
+            $Count = [Math]::max($Count, -$SelectedItem)
         } else {
             $Move = $false
-            if ($Line -lt ([Math]::Abs([Int]$Count))) {$Count = (-$Line) + 1}
+            $Count = [Math]::max($Count, -$Line + 1)
         }
     }
+    if ($Count -eq 0) {return}
 
+    # Erase highlight of selected line
+    Set-Selection 1 $Line ($ListHandle.ListConfig.ListWidth - 3) $PowerTabConfig.Colors.TextColor $PowerTabConfig.Colors.BackColor
+    $SelectedItem += $Count
     if ($Move) {
-        Set-Selection 1 $Line ($ListHandle.ListConfig.ListWidth - 3) $PowerTabConfig.Colors.TextColor $PowerTabConfig.Colors.BackColor
+        # Scroll rows that are already visible to avoid re-rendering them
         Move-List 1 1 ($ListHandle.ListConfig.ListWidth - 3) ($ListHandle.ListConfig.ListHeight - 2) (-$Count)
-        $SelectedItem += $Count
         $ListHandle.FirstItem += $Count
         $ListHandle.LastItem += $Count
 
+        # Draw rows that were not previously visible
         $LinePosition = $ListHandle.Position
         $LinePosition.X += 1
         if ($One -eq 1) {
@@ -684,14 +689,12 @@ Function Move-Selection {
             $LinePosition.Y += 1
             $LineBuffer = ConvertTo-BufferCellArray ($ListHandle.Items[($SelectedItem..($SelectedItem - ($Count - $One)))] | Select-Object -ExpandProperty ListItemText) $PowerTabConfig.Colors.TextColor $PowerTabConfig.Colors.BackColor
         }
-        $LineHandle = New-Buffer $LinePosition $LineBuffer
-        Set-Selection 1 $Line ($ListHandle.ListConfig.ListWidth - 3) $PowerTabConfig.Colors.SelectedTextColor $PowerTabConfig.Colors.SelectedBackColor
+        New-Buffer $LinePosition $LineBuffer
     } else {
-        Set-Selection 1 $Line ($ListHandle.ListConfig.ListWidth - 3) $PowerTabConfig.Colors.TextColor $PowerTabConfig.Colors.BackColor
-        $SelectedItem += $Count
         $Line += $Count
-        Set-Selection 1 $Line ($ListHandle.ListConfig.ListWidth - 3) $PowerTabConfig.Colors.SelectedTextColor $PowerTabConfig.Colors.SelectedBackColor
     }
+    # Draw highlight of selected line
+    Set-Selection 1 $Line ($ListHandle.ListConfig.ListWidth - 3) $PowerTabConfig.Colors.SelectedTextColor $PowerTabConfig.Colors.SelectedBackColor
     $ListHandle.SelectedItem = $SelectedItem
     $ListHandle.SelectedLine = $Line
 
