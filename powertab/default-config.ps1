@@ -24,6 +24,8 @@ $PowerTabConfig = @{
     CustomComplete = $true
 
     DoubleBorder = $true
+
+    VisualStudioTabBehavior = $false
 }
 
 # Expose globally to allow customization
