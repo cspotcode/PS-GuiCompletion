@@ -44,31 +44,37 @@ Function Get-ConsoleList {
 
     Function Pop-CharacterFromFilter() {
         ## Remove last character from filter
-        ([Ref]$Filter).Value = $Filter.SubString(0, $Filter.Length - 1)
-        $Host.UI.Write([char]8)
-        Write-Line ($UI.CursorPosition.X) ($UI.CursorPosition.Y - $UI.WindowPosition.Y) " " $Colors.FilterColor $UI.BackgroundColor
-        Apply-Filter | Out-Null
+        if(Apply-Filter $Filter.SubString(0, $Filter.Length - 1)) {
+            $Host.UI.Write([char]8)
+            Write-Line ($UI.CursorPosition.X) ($UI.CursorPosition.Y - $UI.WindowPosition.Y) " " $Colors.FilterColor $UI.BackgroundColor
+        }
     }
 
     Function Append-CharacterToFilter($Char) {
-        ([Ref]$Filter).Value += $Char
-        $success = Apply-Filter
-        if($success) {
+        if((Apply-Filter ($Filter + $Char))) {
             $Host.UI.Write($Colors.FilterColor, $UI.BackgroundColor, $Char)
         }
 
     }
 
-    Function Apply-Filter {
+    Function Apply-Filter($newFilter) {
         $Old = $Items.Length
-        ([Ref]$Items).Value = @(Select-Item $Content $LastWord $Filter)
-        $New = $Items.Length
+        # If new filter is the old filter with something appended,
+        # assume filter will only match a subset of already-matched items.
+        $candidates = $Content
+        if($newFilter.IndexOf($Filter) -eq 0) {
+            $candidates = $Items
+        }
+        $newItems = @(Select-Item $candidates $LastWord $newFilter)
+        $New = $newItems.Length
         if ($New -lt 1) {
-            ## If new filter results in no items, sound error beep and remove character
+            ## If new filter results in no items, sound error beep and report failure
             [System.Console]::Beep()
-            ([Ref]$Filter).Value = $Filter.SubString(0, $Filter.Length - 1)
             return $false
         } else {
+            # Success!  Persist the new filter and items.
+            ([Ref]$Filter).Value = $newFilter
+            ([Ref]$Items).Value = $newItems
             if ($Old -ne $New) {
                 ## Update console list contents
                 $ListHandle.Clear()
@@ -100,7 +106,7 @@ Function Get-ConsoleList {
     $Key = $UI.ReadKey('NoEcho,IncludeKeyDown')
 
     ## Process key presses
-    $Items = @()
+    $Items = $Content
     $Continue = $true
     while ($Key.VirtualKeyCode -ne 27 -and $Continue -eq $true) {
         if ($OldFilter -ne $Filter) {
@@ -227,9 +233,6 @@ Function Get-ConsoleList {
             {$Key.Character} { ## Character
                 ## Add character to filter
                 $success = Append-CharacterToFilter $Key.Character
-                if($success) {
-                    $Host.UI.Write($Colors.FilterColor, $UI.BackgroundColor, $Key.Character)
-                }
                 break
             }
         }
