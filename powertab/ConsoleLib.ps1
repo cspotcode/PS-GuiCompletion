@@ -378,14 +378,18 @@ Function New-Buffer {
     $OldBuffer = $UI.GetBufferContents((New-Object System.Management.Automation.Host.Rectangle $OldTop, $OldBottom))
 
     $UI.SetBufferContents($BufferTop, $Buffer)
-    $Handle = New-Object System.Management.Automation.PSObject -Property @{
-        Content = $Buffer
-        OldContent = $OldBuffer
-        Location = $BufferTop
-        OldLocation = $OldTop
+    $Handle = New-Instance {
+        val Content $Buffer
+        val OldContent $OldBuffer
+        val Location $BufferTop
+        val OldLocation $OldTop
+        method Clear {
+            $UI.SetBufferContents($This.OldLocation, $This.OldContent)
+        }
+        method Show {
+            $UI.SetBufferContents($This.Location, $This.Content)
+        }
     }
-    Add-Member -InputObject $Handle -MemberType ScriptMethod -Name Clear -Value {$UI.SetBufferContents($This.OldLocation, $This.OldContent)}
-    Add-Member -InputObject $Handle -MemberType ScriptMethod -Name Show -Value {$UI.SetBufferContents($This.Location, $This.Content)}
     $Handle
 }
 
@@ -452,14 +456,16 @@ Function Parse-List {
     }
 
     # Output
-    New-Object System.Management.Automation.PSObject -Property @{
-        Orientation = $Placement
-        TopX = $X
-        TopY = $Y
-        ListHeight = $ListHeight
-        ListWidth = $ListWidth
-        MaxItems = $MaxItems
-        PageSize = $PageSize
+    New-Instance {
+        vals @{
+            Orientation = $Placement
+            TopX = $X
+            TopY = $Y
+            ListHeight = $ListHeight
+            ListWidth = $ListWidth
+            MaxItems = $MaxItems
+            PageSize = $PageSize
+        }
     }
 }
 
