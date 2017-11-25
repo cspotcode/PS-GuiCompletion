@@ -711,7 +711,7 @@ Function Move-Selection {
             $LinePosition.Y += 1
             $LineBuffer = ConvertTo-BufferCellArray ($ListHandle.Items[($SelectedItem..($SelectedItem - ($Count - $One)))] | Select-Object -ExpandProperty ListItemText) $PowerTabConfig.Colors.TextColor $PowerTabConfig.Colors.BackColor
         }
-        New-Buffer $LinePosition $LineBuffer
+        $LineHandle = New-Buffer $LinePosition $LineBuffer
     } else {
         $Line += $Count
     }
