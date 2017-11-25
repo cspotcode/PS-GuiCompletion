@@ -181,7 +181,7 @@ Function Get-ConsoleList {
                 break
             }
             190 { ## Period
-                if ($PowerTabConfig.DotComplete -and -not $PowerTabFileSystemMode) {
+                if ($PowerTabConfig.DotComplete) {
                     if ($PowerTabConfig.AutoExpandOnDot) {
                         $Recurse.Value = $true
                     }
@@ -205,7 +205,7 @@ Function Get-ConsoleList {
                 if (($PowerTabConfig.SpaceComplete -and -not ($Key.ControlKeyState -match 'CtrlPressed')) -or (-not $PowerTabConfig.SpaceComplete -and ($Key.ControlKeyState -match 'CtrlPressed'))) {
                     ## Expand with currently selected item
                     $Item = $ListHandle.Items[$ListHandle.SelectedItem].CompletionText
-                    if ((-not $Item.Contains(' ')) -and ($PowerTabFileSystemMode -ne $true)) {$Item += ' '}
+                    if (-not $Item.Contains(' ')) {$Item += ' '}
                     $Item
                     $Continue = $false
                     break
