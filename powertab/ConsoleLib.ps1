@@ -33,37 +33,68 @@ Function Get-ConsoleList {
     ## Create console list
     $Filter = $OldFilter = ''
     $Colors = $PowerTabConfig.Colors
-    $ListHandle = New-ConsoleList $Content $Colors.BorderColor $Colors.BorderBackColor $Colors.TextColor $Colors.BackColor
+    $ListHandle = New-ConsoleList $Content $Colors.BorderColor $Colors.BorderBackColor $Colors.TextColor $Colors.BackColor $Colors.SelectedTextColor $Colors.SelectedBackColor $Colors.FilterColor
+    $ListHandle.Filter = $Filter
+    $ListHandle.LastWord = $LastWord
+    $ListHandle.renderChrome()
 
     ## Preview of current filter, shows up where cursor is at
     $PreviewBuffer = ConvertTo-BufferCellArray "$Filter " $Colors.FilterColor $UI.BackgroundColor
     $Preview = New-Buffer $UI.CursorPosition $PreviewBuffer
 
-    Function Add-Status {
-        ## Title buffer, shows the last word in header of console list
-        $TitleBuffer = ConvertTo-BufferCellArray " $LastWord" $Colors.BorderTextColor $Colors.BorderBackColor
-        $TitlePosition = $ListHandle.Position
-        $TitlePosition.X += 2
-        $TitleHandle = New-Buffer $TitlePosition $TitleBuffer
-
-        ## Filter buffer, shows the current filter after the last word in header of console list
-        $FilterBuffer = ConvertTo-BufferCellArray "$Filter " $Colors.FilterColor $Colors.BorderBackColor
-        $FilterPosition = $ListHandle.Position
-        $FilterPosition.X += (3 + $LastWord.Length)
-        $FilterHandle = New-Buffer $FilterPosition $FilterBuffer
-
-        ## Status buffer, shows at footer of console list. Displays selected item index, index range of currently visible items, and total item count.
-        $StatusBuffer = ConvertTo-BufferCellArray "[$($ListHandle.SelectedItem + 1)] $($ListHandle.FirstItem + 1)-$($ListHandle.LastItem + 1) [$($Content.Length)]" $Colors.BorderTextColor $Colors.BorderBackColor
-        $StatusPosition = $ListHandle.Position
-        $StatusPosition.X += 2
-        $StatusPosition.Y += ($listHandle.ListConfig.ListHeight - 1)
-        $StatusHandle = New-Buffer $StatusPosition $StatusBuffer
+    Function Pop-CharacterFromFilter() {
+        ## Remove last character from filter
+        ([Ref]$Filter).Value = $Filter.SubString(0, $Filter.Length - 1)
+        $Host.UI.Write([char]8)
+        Write-Line ($UI.CursorPosition.X) ($UI.CursorPosition.Y - $UI.WindowPosition.Y) " " $Colors.FilterColor $UI.BackgroundColor
+        Apply-Filter | Out-Null
     }
-    . Add-Status
+
+    Function Append-CharacterToFilter($Char) {
+        ([Ref]$Filter).Value += $Char
+        $success = Apply-Filter
+        if($success) {
+            $Host.UI.Write($Colors.FilterColor, $UI.BackgroundColor, $Char)
+        }
+
+    }
+
+    Function Apply-Filter {
+        $Old = $Items.Length
+        ([Ref]$Items).Value = @(Select-Item $Content $LastWord $Filter)
+        $New = $Items.Length
+        if ($New -lt 1) {
+            ## If new filter results in no items, sound error beep and remove character
+            [System.Console]::Beep()
+            ([Ref]$Filter).Value = $Filter.SubString(0, $Filter.Length - 1)
+            return $false
+        } else {
+            if ($Old -ne $New) {
+                ## Update console list contents
+                $ListHandle.Clear()
+                ([Ref]$ListHandle).Value = New-ConsoleList $Items $Colors.BorderColor $Colors.BorderBackColor $Colors.TextColor $Colors.BackColor $Colors.SelectedTextColor $Colors.SelectedBackColor $Colors.FilterColor
+            }
+
+            ## Select first item of new list
+            $ListHandle.eraseHighlight()
+            $ListHandle.SelectedItem = 0
+            $ListHandle.ScrollPosition = 0
+            $ListHandle.renderHighlight()
+
+            ## Update status buffers
+            $ListHandle.Filter = $Filter
+            $ListHandle.LastWord = $LastWord
+            $ListHandle.renderChrome()
+
+            return $true
+        }
+    }
 
     ## Select the first item in the list
-    $SelectedItem = 0
-    Set-Selection 1 ($SelectedItem + 1) ($ListHandle.ListConfig.ListWidth - 3) $Colors.SelectedTextColor $Colors.SelectedBackColor
+    $ListHandle.eraseHighlight()
+    $ListHandle.SelectedItem = 0
+    $ListHandle.ScrollPosition = 0
+    $ListHandle.renderHighlight()
 
     ## Listen for first key press
     $Key = $UI.ReadKey('NoEcho,IncludeKeyDown')
@@ -151,50 +182,12 @@ Function Get-ConsoleList {
                 if ($Index -ge $Text.Length) {break}
                 # append next char
                 $Char = $Text[$Index]
-                $Filter += $Char
-
-                $Old = $Items.Length
-                $Items = @(Select-Item $Content $LastWord $Filter)
-                $New = $Items.Length
-                if ($New -lt 1) {
-                    ## If new filter results in no items, sound error beep and remove character
-                    [System.Console]::Beep()
-                    $Filter = $Filter.SubString(0, $Filter.Length - 1)
-                } else {
-                    if ($Old -ne $New) {
-                        ## Update console list contents
-                        $ListHandle.Clear()
-                        $ListHandle = New-ConsoleList $Items $Colors.BorderColor $Colors.BorderBackColor $Colors.TextColor $Colors.BackColor
-                        ## Update status buffers
-                        . Add-Status
-                    }
-                    ## Select first item of new list
-                    $SelectedItem = 0
-                    Set-Selection 1 ($SelectedItem + 1) ($ListHandle.ListConfig.ListWidth - 3) $Colors.SelectedTextColor $Colors.SelectedBackColor
-                    $Host.UI.Write($Colors.FilterColor, $UI.BackgroundColor, $Char)
-                }
+                Append-CharacterToFilter $Char
                 break
             }
             {(8,37 -contains $_)} { # Backspace or Left Arrow
                 if ($Filter) {
-                    ## Remove last character from filter
-                    $Filter = $Filter.SubString(0, $Filter.Length - 1)
-                    $Host.UI.Write([char]8)
-                    Write-Line ($UI.CursorPosition.X) ($UI.CursorPosition.Y - $UI.WindowPosition.Y) " " $Colors.FilterColor $UI.BackgroundColor
-
-                    $Old = $Items.Length
-                    $Items = @(Select-Item $Content $LastWord $Filter)
-                    $New = $Items.Length
-                    if ($Old -ne $New) {
-                        ## If the item list changed, update the contents of the console list
-                        $ListHandle.Clear()
-                        $ListHandle = New-ConsoleList $Items $Colors.BorderColor $Colors.BorderBackColor $Colors.TextColor $Colors.BackColor
-                        ## Update status buffers
-                        . Add-Status
-                    }
-                    ## Select first item of new list
-                    $SelectedItem = 0
-                    Set-Selection 1 ($SelectedItem + 1) ($ListHandle.ListConfig.ListWidth - 3) $Colors.SelectedTextColor $Colors.SelectedBackColor
+                    Pop-CharacterFromFilter
                 } else {
                     if ($PowerTabConfig.CloseListOnEmptyFilter) {
                         $Key.VirtualKeyCode = 27
@@ -251,34 +244,8 @@ Function Get-ConsoleList {
             }
             {$Key.Character} { ## Character
                 ## Add character to filter
-                $Filter += $Key.Character
-
-                $Old = $Items.Length
-                $Items = @(Select-Item $Content $LastWord $Filter)
-                $New = $Items.Length
-                if ($Items.Length -lt 1) {
-                    ## New filter results in no items
-                    if ($PowerTabConfig.CloseListOnEmptyFilter) {
-                        ## Close console list and return the return word with current filter (includes new character)
-                        $ListHandle.Clear()
-                        return "$ReturnWord$Filter"
-                    } else {
-                        ## Sound error beep and remove character
-                        [System.Console]::Beep()
-                        $Filter = $Filter.SubString(0, $Filter.Length - 1)
-                    }
-                } else {
-                    if ($Old -ne $New) {
-                        ## If the item list changed, update the contents of the console list
-                        $ListHandle.Clear()
-                        $ListHandle = New-ConsoleList $Items $Colors.BorderColor $Colors.BorderBackColor $Colors.TextColor $Colors.BackColor
-                        ## Update status buffer
-                        . Add-Status
-                        ## Select first item of new list
-                        $SelectedItem = 0
-                        Set-Selection 1 ($SelectedItem + 1) ($ListHandle.ListConfig.ListWidth - 3) $Colors.SelectedTextColor $Colors.SelectedBackColor
-                    }
-
+                $success = Append-CharacterToFilter $Key.Character
+                if($success) {
                     $Host.UI.Write($Colors.FilterColor, $UI.BackgroundColor, $Key.Character)
                 }
                 break
@@ -530,6 +497,15 @@ Function New-ConsoleList {
         ,
         [System.ConsoleColor]
         $ContentBackgroundColor
+        ,
+        [System.ConsoleColor]
+        $SelectedContentForegroundColor
+        ,
+        [System.ConsoleColor]
+        $SelectedContentBackgroundColor
+        ,
+        [System.ConsoleColor]
+        $FilterTextColor
     )
 
     $Size = Get-ContentSize $Content
@@ -548,23 +524,82 @@ Function New-ConsoleList {
     $Position.Y += 1
     $ContentBuffer = ConvertTo-BufferCellArray ($Lines[0..($ListConfig.ListHeight - 3)]) $ContentForegroundColor $ContentBackgroundColor
     $ContentHandle = New-Buffer $Position $ContentBuffer
-    $Handle = New-Object System.Management.Automation.PSObject -Property @{
-        Position = New-Position $ListConfig.TopX $ListConfig.TopY
-        ListConfig = $ListConfig
-        ContentSize = $Size
-        BoxSize = $BoxSize
-        Box = $BoxHandle
-        Content = $ContentHandle
-        SelectedItem = 0
-        SelectedLine = 1
-        Items = $Content
-        FirstItem = 0
-        LastItem = $Listconfig.ListHeight - 3
-        PageSize = $Listconfig.PageSize
-        MaxItems = $Listconfig.MaxItems
+
+    $Handle = New-Instance {
+        vals @{
+            Position = New-Position $ListConfig.TopX $ListConfig.TopY
+            ListConfig = $ListConfig
+            ContentSize = $Size
+            BoxSize = $BoxSize
+            Box = $BoxHandle
+            Content = $ContentHandle
+            Status = $null
+            FilterBuffer = $null
+            Title = $null
+            Filter = ''
+            LastWord = ''
+            SelectedItem = 0
+            ScrollPosition = 0
+            Items = $Content
+            PageSize = $Listconfig.PageSize
+            MaxItems = $Listconfig.MaxItems
+            BorderForegroundColor = $BorderForegroundColor
+            BorderBackgroundColor = $BorderBackgroundColor
+            ContentForegroundColor = $ContentForegroundColor
+            ContentBackgroundColor = $ContentBackgroundColor
+            SelectedContentForegroundColor = $SelectedContentForegroundColor
+            SelectedContentBackgroundColor = $SelectedContentBackgroundColor
+            FilterTextColor = $FilterTextColor
+        }
+        prop SelectedLine {
+            $this.SelectedItem - $this.ScrollPosition + 1
+        } {param($v)
+            $this.SelectedItem = $this.ScrollPosition + $v - 1
+        }
+        prop FirstItem {
+            $this.ScrollPosition
+        }
+        prop LastItem {
+            $this.ScrollPosition + $this.PageSize - 1
+        }
+        method Clear {
+            $This.Box.Clear()
+        }
+        method Show {
+            $This.Box.Show()
+            $This.Content.Show()
+        }
+        method renderHighlight {
+            Set-Selection 1 $this.SelectedLine ($this.ListConfig.ListWidth - 3) $this.SelectedContentForegroundColor $this.SelectedContentBackgroundColor
+        }
+        method eraseHighlight {
+            Set-Selection 1 $this.SelectedLine ($this.ListConfig.ListWidth - 3) $this.ContentForegroundColor $this.ContentBackgroundColor
+        }
+        method renderChrome {
+            ## Title buffer, shows the last word in header of console list
+            $TitleBuffer = ConvertTo-BufferCellArray " $($this.LastWord)" $this.BorderForegroundColor $this.BorderBackgroundColor
+            $TitlePosition = $this.Position
+            $TitlePosition.X += 2
+            $this.Title = New-Buffer $TitlePosition $TitleBuffer
+
+            ## Filter buffer, shows the current filter after the last word in header of console list
+            $FilterBuffer = ConvertTo-BufferCellArray "$($this.Filter) " $this.FilterTextColor $this.BorderBackgroundColor
+            $FilterPosition = $this.Position
+            $FilterPosition.X += (3 + $this.LastWord.Length)
+            $this.FilterBuffer = New-Buffer $FilterPosition $FilterBuffer
+
+            $this.renderStatus()
+        }
+        method renderStatus {
+            ## Status buffer, shows at footer of console list. Displays selected item index, index range of currently visible items, and total item count.
+            $StatusBuffer = ConvertTo-BufferCellArray "[$($this.SelectedItem + 1)] $($this.FirstItem + 1)-$($this.LastItem + 1) [$($this.Items.Length)]" $this.BorderForegroundColor $this.BorderBackgroundColor
+            $StatusPosition = $this.Position
+            $StatusPosition.X += 2
+            $StatusPosition.Y += ($this.ListConfig.ListHeight - 1)
+            $this.Status = New-Buffer $StatusPosition $StatusBuffer
+        }
     }
-    Add-Member -InputObject $Handle -MemberType ScriptMethod -Name Clear -Value {$This.Box.Clear()}
-    Add-Member -InputObject $Handle -MemberType ScriptMethod -Name Show -Value {$This.Box.Show(); $This.Content.Show()}
+    $Handle.renderStatus()
     $Handle
 }
 
@@ -671,13 +706,12 @@ Function Move-Selection {
     if ($Count -eq 0) {return}
 
     # Erase highlight of selected line
-    Set-Selection 1 $Line ($ListHandle.ListConfig.ListWidth - 3) $PowerTabConfig.Colors.TextColor $PowerTabConfig.Colors.BackColor
+    $ListHandle.eraseHighlight()
     $SelectedItem += $Count
     if ($Move) {
         # Scroll rows that are already visible to avoid re-rendering them
         Move-List 1 1 ($ListHandle.ListConfig.ListWidth - 3) ($ListHandle.ListConfig.ListHeight - 2) (-$Count)
-        $ListHandle.FirstItem += $Count
-        $ListHandle.LastItem += $Count
+        $ListHandle.ScrollPosition += $Count
 
         # Draw rows that were not previously visible
         $LinePosition = $ListHandle.Position
@@ -694,15 +728,10 @@ Function Move-Selection {
         $Line += $Count
     }
     # Draw highlight of selected line
-    Set-Selection 1 $Line ($ListHandle.ListConfig.ListWidth - 3) $PowerTabConfig.Colors.SelectedTextColor $PowerTabConfig.Colors.SelectedBackColor
     $ListHandle.SelectedItem = $SelectedItem
-    $ListHandle.SelectedLine = $Line
+    $ListHandle.renderHighlight()
 
-    ## New status buffer
-    $StatusHandle.Clear()
-    $StatusBuffer = ConvertTo-BufferCellArray "[$($ListHandle.SelectedItem + 1)] $($ListHandle.FirstItem + 1)-$($ListHandle.LastItem + 1) [$($Content.Length)]" `
-        $PowerTabConfig.Colors.BorderTextColor $PowerTabConfig.Colors.BorderBackColor
-    $StatusHandle = New-Buffer $StatusHandle.Location $StatusBuffer
+    $ListHandle.renderStatus()
 }
 
 function Get-FilterPattern($Filter) {
