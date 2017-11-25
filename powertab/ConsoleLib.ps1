@@ -131,45 +131,27 @@ Function Get-ConsoleList {
             38 { ## Up Arrow
                 if ($ShiftPressed) {
                     ## Fast scroll selected
-                    if ($PowerTabConfig.FastScrollItemCount -gt ($ListHandle.Items.Count - 1)) {
-                        $Count = ($ListHandle.Items.Count - 1)
-                    } else {
-                        $Count = $PowerTabConfig.FastScrollItemCount
-                    }
-                    Move-Selection (- $Count)
+                    Move-Selection (-$PowerTabConfig.FastScrollItemCount)
                 } else {
-                    Move-Selection -1
+                    Move-Selection (-1)
                 }
                 break
             }
             40 { ## Down Arrow
                 if ($ShiftPressed) {
                     ## Fast scroll selected
-                    if ($PowerTabConfig.FastScrollItemCount -gt ($ListHandle.Items.Count - 1)) {
-                        $Count = ($ListHandle.Items.Count - 1)
-                    } else {
-                        $Count = $PowerTabConfig.FastScrollItemCount
-                    }
-                    Move-Selection $Count
+                    Move-Selection $PowerTabConfig.FastScrollItemCount
                 } else {
                     Move-Selection 1
                 }
                 break
             }
             33 { ## Page Up
-                $Count = $ListHandle.Items.Count
-                if ($Count -gt $ListHandle.MaxItems) {
-                    $Count = $ListHandle.MaxItems
-                }
-                Move-Selection (-($Count - 1))
+                Move-Selection (-($ListHandle.PageSize - 1))
                 break
             }
             34 { ## Page Down
-                $Count = $ListHandle.Items.Count
-                if ($Count -gt $ListHandle.MaxItems) {
-                    $Count = $ListHandle.MaxItems
-                }
-                Move-Selection ($Count - 1)
+                Move-Selection ($ListHandle.PageSize - 1)
                 break
             }
             39 { ## Right Arrow
