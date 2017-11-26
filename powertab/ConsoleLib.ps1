@@ -382,11 +382,10 @@ Function New-Buffer {
     $BufferBottom.X += ($Buffer.GetUpperBound(1))
     $BufferBottom.Y += ($Buffer.GetUpperBound(0))
 
-    $OldTop = New-Object System.Management.Automation.Host.Coordinates 0, $BufferTop.Y
-    $OldBottom = New-Object System.Management.Automation.Host.Coordinates ($UI.BufferSize.Width - 1), $BufferBottom.Y
-    $OldBuffer = $UI.GetBufferContents((New-Object System.Management.Automation.Host.Rectangle $OldTop, $OldBottom))
+    $OldTop = [System.Management.Automation.Host.Coordinates]::new(0, $BufferTop.Y)
+    $OldBottom = [System.Management.Automation.Host.Coordinates]::new(($UI.BufferSize.Width - 1), $BufferBottom.Y)
+    $OldBuffer = $UI.GetBufferContents([System.Management.Automation.Host.Rectangle]::new($OldTop, $OldBottom))
 
-    $UI.SetBufferContents($BufferTop, $Buffer)
     $Handle = New-Instance {
         val Content $Buffer
         val OldContent $OldBuffer
@@ -399,6 +398,7 @@ Function New-Buffer {
             $UI.SetBufferContents($This.Location, $This.Content)
         }
     }
+    $Handle.Show()
     $Handle
 }
 
