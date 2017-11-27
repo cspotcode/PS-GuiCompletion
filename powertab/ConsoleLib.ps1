@@ -346,7 +346,6 @@ Function Get-ContentSize {
         [Object[]]$Content
     )
 
-    New-Object System.Drawing.Size $MaxWidth, $Content.Length
     $MaxWidth = $PowerTabConfig.MinimumTextWidth
     foreach($C in $Content) {
         $l = $C.ListItemText.Length
@@ -362,6 +361,7 @@ Function New-Position {
         ,
         [Int]$Y
     )
+    New-Object System.Drawing.Size $MaxWidth, $Content.Length
 
     $Position = $UI.WindowPosition
     $Position.X += $X
