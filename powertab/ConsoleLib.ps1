@@ -353,20 +353,7 @@ Function Get-ContentSize {
             $MaxWidth = $l
         }
     }
-}
-
-Function New-Position {
-    param(
-        [Int]$X
-        ,
-        [Int]$Y
-    )
-    New-Object System.Drawing.Size $MaxWidth, $Content.Length
-
-    $Position = $UI.WindowPosition
-    $Position.X += $X
-    $Position.Y += $Y
-    $Position
+    Size $MaxWidth, $Content.Length
 }
 
 Function New-Buffer {
@@ -382,9 +369,9 @@ Function New-Buffer {
     $BufferBottom.X += ($Buffer.GetUpperBound(1))
     $BufferBottom.Y += ($Buffer.GetUpperBound(0))
 
-    $OldTop = [System.Management.Automation.Host.Coordinates]::new(0, $BufferTop.Y)
-    $OldBottom = [System.Management.Automation.Host.Coordinates]::new(($UI.BufferSize.Width - 1), $BufferBottom.Y)
-    $OldBuffer = $UI.GetBufferContents([System.Management.Automation.Host.Rectangle]::new($OldTop, $OldBottom))
+    $OldTop = Coordinates 0, $BufferTop.Y
+    $OldBottom = Coordinates ($UI.BufferSize.Width - 1), $BufferBottom.Y
+    $OldBuffer = $UI.GetBufferContents((Rectangle $OldTop, $OldBottom))
 
     $Handle = New-Instance {
         val Content $Buffer
@@ -400,54 +387,6 @@ Function New-Buffer {
     }
     $Handle.Show()
     $Handle
-}
-
-Function ConvertTo-BufferCellArray {
-    param(
-        [String[]]
-        $Content
-        ,
-        [System.ConsoleColor]
-        $ForegroundColor = $UI.ForegroundColor
-        ,
-        [System.ConsoleColor]
-        $BackgroundColor = $UI.BackgroundColor
-        ,
-        [int]
-        $Width = 0
-    )
-
-    # If width is unspecified, auto-detect max string length
-    if($Width -eq 0) {
-        ForEach($Row in $Content) {
-            $l = $Row.Length
-            if($l -gt $Width) {
-                $Width = $l
-            }
-        }
-    }
-    $Height = $Content.Count
-    $arr = [System.Management.Automation.Host.BufferCell[,]]::new($height, $width)
-    $cell = $arr[0,0]
-    # All cells have the same colors
-    $cell.ForegroundColor = $ForegroundColor
-    $cell.BackgroundColor = $BackgroundColor
-    for($y = 0; $y -lt $height; $y++) {
-        $row = $Content[$y]
-        $rowLength = $row.Length
-        # Fill row with available characters
-        for($x = 0; $x -lt $rowLength; $x++) {
-            $cell.Character = $row[$x]
-            $arr[$y, $x] = $cell
-        }
-        # If row is too short, fill remaining cells with spaces
-        $cell.Character = ' '
-        for(; $x -lt $Width; $x++) {
-            $arr[$y, $x] = $cell
-        }
-    }
-    # Prevent pipe from iterating array
-    ,$arr
 }
 
 Function Parse-List {
@@ -697,7 +636,7 @@ Function Set-Selection {
     $Position = $ListHandle.Position
     $Position.X += $X
     $Position.Y += $Y
-    $Rectangle = New-Object System.Management.Automation.Host.Rectangle $Position.X, $Position.Y, ($Position.X + $Width), $Position.Y
+    $Rectangle = Rectangle $Position.X, $Position.Y, ($Position.X + $Width), $Position.Y
     $LineBuffer = $UI.GetBufferContents($Rectangle)
     $LineBuffer = $UI.NewBufferCellArray(
         @([String]::Join("", ($LineBuffer | .{process{$_.Character}}))),

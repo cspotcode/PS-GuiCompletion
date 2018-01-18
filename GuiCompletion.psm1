@@ -1,7 +1,10 @@
+Set-StrictMode -Version 2.0
+
 $ErrorActionPreference = 'Stop'
 $UI = $Host.UI.RawUI
 
 . $PSScriptRoot\powertab\util.ps1
+. $PSScriptRoot\powertab\constructors.ps1
 . $PSScriptRoot\powertab\default-config.ps1
 . $PSScriptRoot\powertab\ConsoleLib.ps1
 
