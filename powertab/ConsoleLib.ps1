@@ -40,7 +40,7 @@ Function Get-ConsoleList {
 
     ## Preview of current filter, shows up where cursor is at
     $PreviewBuffer = ConvertTo-BufferCellArray "$Filter " $Colors.FilterColor $UI.BackgroundColor
-    $Preview = New-Buffer $UI.CursorPosition $PreviewBuffer
+    $Preview = New-Buffer $UI.CursorPosition $PreviewBuffer -CaptureOld
 
     Function Pop-CharacterFromFilter() {
         ## Remove last character from filter
@@ -112,7 +112,7 @@ Function Get-ConsoleList {
         if ($OldFilter -ne $Filter) {
             $Preview.Clear()
             $PreviewBuffer = ConvertTo-BufferCellArray "$Filter " $Colors.FilterColor $UI.BackgroundColor
-            $Preview = New-Buffer $Preview.Location $PreviewBuffer
+            $Preview = New-Buffer $Preview.Location $PreviewBuffer -CaptureOld
             $OldFilter = $Filter
         }
 
@@ -358,30 +358,56 @@ Function Get-ContentSize {
 
 Function New-Buffer {
     param(
+        [Parameter(Mandatory, ParameterSetName='set1', Position=0)]
+        [Parameter(Mandatory, ParameterSetName='set2', Position=0)]
         [System.Management.Automation.Host.Coordinates]
         $Position
         ,
+        [Parameter(Mandatory, ParameterSetName='set1', Position=1)]
+        [Parameter(Mandatory, ParameterSetName='set2', Position=1)]
         [System.Management.Automation.Host.BufferCell[,]]
-        $Buffer
+        $Content
+        ,
+        [Parameter(Mandatory, ParameterSetName='set1')]
+        [switch]
+        $CaptureOld
+        ,
+        [Parameter(Mandatory, ParameterSetName='set2')]
+        [switch]
+        $NoCaptureOld
     )
 
-    $BufferBottom = $BufferTop = $Position
-    $BufferBottom.X += ($Buffer.GetUpperBound(1))
-    $BufferBottom.Y += ($Buffer.GetUpperBound(0))
+    $LowerRight = Coordinates ($Position.X + $Content.GetUpperBound(1)), ($Position.Y + $Content.GetUpperBound(0))
 
-    $OldTop = Coordinates 0, $BufferTop.Y
-    $OldBottom = Coordinates ($UI.BufferSize.Width - 1), $BufferBottom.Y
-    $OldBuffer = $UI.GetBufferContents((Rectangle $OldTop, $OldBottom))
+    if($CaptureOld) {
+        $OldContent = $UI.GetBufferContents((Rectangle $Position, $LowerRight))
+    } else {
+        $OldContent = $null
+    }
 
     $Handle = New-Instance {
-        val Content $Buffer
-        val OldContent $OldBuffer
-        val Location $BufferTop
-        val OldLocation $OldTop
+        val Content $Content
+        val OldContent $OldContent
+        val Location $Position
         method Clear {
-            $UI.SetBufferContents($This.OldLocation, $This.OldContent)
+            if($This.OldContent -eq $null) {
+                throw 'Cannot clear a buffer that didnt capture contents beneath itself'
+            }
+            $UI.SetBufferContents($This.Location, $This.OldContent)
         }
         method Show {
+            param($ReplacementContent)
+
+            if($ReplacementContent -ne $null) {
+                if($This.OldContent -and ((
+                    $ReplacementContent.GetUpperBound(0) -gt $This.OldContent.GetUpperBound(0)
+                ) -or (
+                    $ReplacementContent.GetUpperBound(1) -gt $This.OldContent.GetUpperBound(1)
+                ))) {
+                    throw 'Replacement content cannot be larger than captured content'
+                }
+                $This.Content = $ReplacementContent
+            }
             $UI.SetBufferContents($This.Location, $This.Content)
         }
     }
@@ -486,14 +512,14 @@ Function New-ConsoleList {
     $Box = New-Box $BoxSize $BorderForegroundColor $BorderBackgroundColor
 
     $Position = New-Position $ListConfig.TopX $ListConfig.TopY
-    $BoxHandle = New-Buffer $Position $Box
+    $BoxHandle = New-Buffer $Position $Box -CaptureOld
 
     # Place content
     $Position.X += 1
     $Position.Y += 1
     $ContentBuffer = ConvertTo-BufferCellArray ($Lines[0..($ListConfig.ListHeight - 3)]) $ContentForegroundColor $ContentBackgroundColor
-    $ContentHandle = New-Buffer $Position $ContentBuffer
 
+    $ContentHandle = New-Buffer $Position $ContentBuffer -NoCaptureOld
     $Handle = New-Instance {
         vals @{
             Position = New-Position $ListConfig.TopX $ListConfig.TopY
@@ -549,13 +575,13 @@ Function New-ConsoleList {
             $TitleBuffer = ConvertTo-BufferCellArray " $($this.LastWord)" $this.BorderForegroundColor $this.BorderBackgroundColor
             $TitlePosition = $this.Position
             $TitlePosition.X += 2
-            $this.Title = New-Buffer $TitlePosition $TitleBuffer
+            $this.Title = New-Buffer $TitlePosition $TitleBuffer -NoCaptureOld
 
             ## Filter buffer, shows the current filter after the last word in header of console list
             $FilterBuffer = ConvertTo-BufferCellArray "$($this.Filter) " $this.FilterTextColor $this.BorderBackgroundColor
             $FilterPosition = $this.Position
             $FilterPosition.X += (3 + $this.LastWord.Length)
-            $this.FilterBuffer = New-Buffer $FilterPosition $FilterBuffer
+            $this.FilterBuffer = New-Buffer $FilterPosition $FilterBuffer -NoCaptureOld
 
             $this.renderStatus()
         }
@@ -565,7 +591,7 @@ Function New-ConsoleList {
             $StatusPosition = $this.Position
             $StatusPosition.X += 2
             $StatusPosition.Y += ($this.ListConfig.ListHeight - 1)
-            $this.Status = New-Buffer $StatusPosition $StatusBuffer
+            $this.Status = New-Buffer $StatusPosition $StatusBuffer -NoCaptureOld
         }
     }
     $Handle.renderStatus()
@@ -692,7 +718,7 @@ Function Move-Selection {
             $LinePosition.Y += 1
             $LineBuffer = ConvertTo-BufferCellArray ($ListHandle.Items[($SelectedItem..($SelectedItem - ($Count - $One)))] | Select-Object -ExpandProperty ListItemText) $PowerTabConfig.Colors.TextColor $PowerTabConfig.Colors.BackColor
         }
-        $LineHandle = New-Buffer $LinePosition $LineBuffer
+        $LineHandle = New-Buffer $LinePosition $LineBuffer -NoCaptureOld
     } else {
         $Line += $Count
     }
