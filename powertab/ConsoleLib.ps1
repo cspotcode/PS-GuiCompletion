@@ -598,29 +598,6 @@ Function New-ConsoleList {
     $Handle
 }
 
-Function Write-Line {
-    param(
-        [Int]$X
-        ,
-        [Int]$Y
-        ,
-        [String]$Text
-        ,
-        [System.ConsoleColor]
-        $ForegroundColor
-        ,
-        [System.ConsoleColor]
-        $BackgroundColor
-    )
-
-    $Position = $UI.WindowPosition
-    $Position.X += $X
-    $Position.Y += $Y
-    if ($Text -eq '') {$Text = '-'}
-    $Buffer = $UI.NewBufferCellArray([String[]]$Text, $ForegroundColor, $BackgroundColor)
-    $UI.SetBufferContents($Position, $Buffer)
-}
-
 Function Move-List {
     param(
         [Int]$X
