@@ -57,10 +57,12 @@ Function ConvertTo-BufferCellArray {
     }
     $Height = $Content.Count
     $arr = [System.Management.Automation.Host.BufferCell[,]]::new($height, $width)
-    $cell = $arr[0,0]
-    # All cells have the same colors
-    $cell.ForegroundColor = $ForegroundColor
-    $cell.BackgroundColor = $BackgroundColor
+    if($height -gt 0 -and $width -gt 0) {
+        $cell = $arr[0,0]
+        # All cells have the same colors
+        $cell.ForegroundColor = $ForegroundColor
+        $cell.BackgroundColor = $BackgroundColor
+    }
     for($y = 0; $y -lt $height; $y++) {
         $row = $Content[$y]
         $rowLength = $row.Length
