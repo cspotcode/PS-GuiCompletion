@@ -593,32 +593,33 @@ Function New-ConsoleList {
             $StatusPosition.Y += ($this.ListConfig.ListHeight - 1)
             $this.Status = New-Buffer $StatusPosition $StatusBuffer -NoCaptureOld
         }
+        method moveList {
+            param(
+                [Int]$X
+                ,
+                [Int]$Y
+                ,
+                [Int]$Width
+                ,
+                [Int]$Height
+                ,
+                [Int]$Offset
+            )
+
+            $Position = $this.Position
+            $Position.X += $X
+            $Position.Y += $Y
+            $Rectangle = Rectangle $Position.X, $Position.Y, ($Position.X + $Width), ($Position.Y + $Height - 1)
+            $Position.Y += $OffSet
+            $BufferCell = BufferCell
+            $BufferCell.BackgroundColor = $PowerTabConfig.Colors.BackColor
+            $UI.ScrollBufferContents($Rectangle, $Position, $Rectangle, $BufferCell)
+        }
     }
     $Handle.renderStatus()
     $Handle
 }
 
-Function Move-List {
-    param(
-        [Int]$X
-        ,
-        [Int]$Y
-        ,
-        [Int]$Width
-        ,
-        [Int]$Height
-        ,
-        [Int]$Offset
-    )
-
-    $Position = $ListHandle.Position
-    $Position.X += $X
-    $Position.Y += $Y
-    $Rectangle = New-Object System.Management.Automation.Host.Rectangle $Position.X, $Position.Y, ($Position.X + $Width), ($Position.Y + $Height - 1)
-    $Position.Y += $OffSet
-    $BufferCell = New-Object System.Management.Automation.Host.BufferCell
-    $BufferCell.BackgroundColor = $PowerTabConfig.Colors.BackColor
-    $UI.ScrollBufferContents($Rectangle, $Position, $Rectangle, $BufferCell)
 }
 
 Function Set-Selection {
@@ -682,7 +683,7 @@ Function Move-Selection {
     $SelectedItem += $Count
     if ($Move) {
         # Scroll rows that are already visible to avoid re-rendering them
-        Move-List 1 1 ($ListHandle.ListConfig.ListWidth - 3) ($ListHandle.ListConfig.ListHeight - 2) (-$Count)
+        $ListHandle.moveList(1, 1, ($ListHandle.ListConfig.ListWidth - 3), ($ListHandle.ListConfig.ListHeight - 2), (-$Count))
         $ListHandle.ScrollPosition += $Count
 
         # Draw rows that were not previously visible
