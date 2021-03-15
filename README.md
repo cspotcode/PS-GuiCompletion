@@ -1,6 +1,6 @@
 # GuiCompletion for PowerShell
 
-*All development has moved to https://github.com/nightroman/PS-GuiCompletion*
+**This project has moved to https://github.com/nightroman/PS-GuiCompletion** The published module is the same GuiCompletion. It is developed by @nightroman starting from v0.9.0.
 
 ---
 
