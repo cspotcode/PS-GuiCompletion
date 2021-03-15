@@ -1,4 +1,7 @@
 # GuiCompletion for PowerShell
+
+*Moved to https://github.com/nightroman/PS-GuiCompletion*
+
 <!-- Remember that description section must render correctly as plain text because it's copy-pasted into the module manifest. -->
 <!--BEGIN DESCRIPTION-->
 This enables a GUI-style tab-completion menu for PowerShell.  It integrates with PSReadLine which comes installed in PowerShell by default, and the GUI code is lifted straight from PowerTab.
