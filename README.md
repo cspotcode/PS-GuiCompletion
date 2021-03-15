@@ -1,6 +1,6 @@
 # GuiCompletion for PowerShell
 
-*Moved to https://github.com/nightroman/PS-GuiCompletion*
+*All development has moved to https://github.com/nightroman/PS-GuiCompletion*
 
 ---
 
